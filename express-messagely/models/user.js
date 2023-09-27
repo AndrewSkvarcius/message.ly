@@ -4,7 +4,7 @@ const db = require("../db");
 const bcrypt = require("bcrypt");
 const ExpressError = require("../expressError");
 
-const {BCRYPT_WORK_FACTOR} = require("../config";)
+const {BCRYPT_WORK_FACTOR} = require("../config");
 
 /** User of the site. */
 
@@ -41,7 +41,8 @@ class User {
   static async updateLoginTimestamp(username) { 
     const results = await db.query(`
     UPDATE users
-    SET last_login_at = $1
+    SET last_login_at = current_timestamp
+    WHERE username = $1
     RETURNING username`, [username] )
 
     if (!results.rows[0]){
@@ -54,7 +55,7 @@ class User {
 
   static async all() { 
     const resultz = await db.query(`
-    SELECT username, first-name, last_name, phone
+    SELECT username, first_name, last_name, phone
     FROM users
     ORDER BY username `);
 
@@ -72,7 +73,7 @@ class User {
 
   static async get(username) {
     const result = await db.query(`
-    SELECT uswername,
+    SELECT username,
     first_name,
     last_name,
     phone ,

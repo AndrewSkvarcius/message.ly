@@ -27,4 +27,61 @@
  * Make sure that the only the intended recipient can mark as read.
  *
  **/
+ const {ensureLoggedIn} = require("../middleware/auth");
+ const Router = require("express").Router;
+ const router =  new Router();
+ 
+ const Message = require("../models/message");
+ const {SECRET_KEY} = require("../config");
+ const ExpressError= require("../expressError");
+const { request } = require("express");
 
+ //GET detail of message
+router.get("/:id", ensureLoggedIn, async (req,res,next)=> {
+    try{
+     let username = req.user.username;
+     let message = await Message.get(req.params.id);
+     
+     if (message.to_user.username !== username && message.from_user.username !== username) {
+        throw new ExpressError("Message un readable", 401);
+     }
+     return request.json({message: message});
+    }
+    catch(e){
+        return next(e);
+    }
+});
+
+//POST message
+router.post("/", ensureLoggedIn, async(req,res,next)=>{
+    try{
+        let msg = Message.create({
+            from_username: req.user.username,
+            to_username: req.body.to_username,
+            body: req.body.body
+        });
+        return res.json({message: msg});
+    }
+    catch(e){
+        return next(e);
+    }
+});
+
+//POST mark message as read
+router.post("/:id/read", ensureLoggedIn, async(req, res, next)=>{
+    try{
+        let username = req.user.username;
+        let mess = await Message.get(req.params.id);
+
+        if (mess.to_user.username !== username) {
+            throw new ExpressError("Can not set to read", 401)
+        }
+        let msg = await Message.markRead(req.params.id);
+
+        return res.json({msg});
+    }
+    catch(e){
+        return next(e);
+    }
+});
+ module.exports = router;
